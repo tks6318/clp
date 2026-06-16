@@ -120,12 +120,39 @@
   }
   @media(max-width:640px){ .grid{grid-template-columns:1fr 1fr;} }
   @media(max-width:460px){ .grid{grid-template-columns:1fr;} }
+
+  /* ===== モード選択バー（簡易版/詳細版・罹患前/罹患後） ===== */
+  .mode-card{background:#fff; border:1px solid var(--border); border-radius:10px; padding:14px 18px; margin-bottom:14px;}
+  .mode-row{display:flex; flex-wrap:wrap; gap:18px 28px; align-items:flex-start;}
+  .mode-group{flex:1 1 320px;}
+  .mode-group>.mlabel{font-size:.78rem; color:var(--gray); font-weight:700; margin-bottom:6px; display:block;}
+  .seg{display:inline-flex; border:1.5px solid var(--blue); border-radius:24px; overflow:hidden; flex-wrap:wrap;}
+  .seg button{padding:9px 18px; font-size:.9rem; font-weight:700; background:#fff; color:var(--blue); border:none; cursor:pointer; line-height:1.25;}
+  .seg button.active{background:var(--blue); color:#fff;}
+  .seg.phase{border-color:var(--green);}
+  .seg.phase button{color:var(--green);}
+  .seg.phase button.active{background:var(--green); color:#fff;}
+  .seg button small{display:block; font-size:.66rem; font-weight:400; opacity:.85;}
+  .mode-desc{font-size:.74rem; color:var(--gray); margin-top:8px; line-height:1.5;}
+  /* 表示制御：body のクラスでフィールドの出し分け */
+  body.simple-mode .detail-only{display:none !important;}
+  body.simple-mode .card.detail-card{display:none !important;}
+  body.detail-mode .simple-only{display:none !important;}
+  body.mode-pre .post-only{display:none !important;}
+  body.mode-post .pre-only{display:none !important;}
+  .phase-tag{display:inline-block; font-size:.66rem; font-weight:700; padding:1px 7px; border-radius:8px; margin-left:6px; vertical-align:middle;}
+  .phase-tag.pre{background:#e7f3ec; color:var(--green);}
+  .phase-tag.post{background:#fdecec; color:var(--accent);}
+  .notice-banner{border-radius:8px; padding:10px 14px; margin-bottom:12px; font-size:.82rem; line-height:1.55;}
+  .notice-banner.simple{background:#eef5fc; border:1px solid #b9d4ee; color:#1a4a78;}
+  .notice-banner.post{background:#fdf2f2; border:1px solid #e8c9c9; color:#8a3b38;}
+  .notice-banner.sub{background:#fff8e8; border:1px solid #e7d2a0; color:#7a5c00;}
 </style>
 </head>
 <body>
 
 <header>
-  <h1>がん罹患シミュレーション ライフプランニングシステム <span style="font-size:.75rem;font-weight:400;">プロトタイプ v0.4.2（Phase 1 / MVP）</span></h1>
+  <h1>がん罹患シミュレーション ライフプランニングシステム <span style="font-size:.75rem;font-weight:400;">プロトタイプ v0.5.0（Phase 1 / MVP）</span></h1>
   <div class="sub">株式会社Precision Financial ／ 日本対がんファイナンシャル・プランナーズ協会（JCFP）</div>
 </header>
 <div class="disclaimer-bar">
@@ -137,23 +164,76 @@
 <!-- ============ 入力フォーム ============ -->
 <div id="form-area">
 
+<!-- ===== モード選択（簡易版/詳細版・罹患前/罹患後） ===== -->
+<div class="mode-card">
+  <div class="mode-row">
+    <div class="mode-group">
+      <span class="mlabel">試算モード</span>
+      <div class="seg" id="seg-mode">
+        <button type="button" data-mode="simple" onclick="setMode('simple')">簡易版<small>最低限の入力で概算</small></button>
+        <button type="button" data-mode="detail" onclick="setMode('detail')">詳細版<small>精緻に試算</small></button>
+      </div>
+    </div>
+    <div class="mode-group">
+      <span class="mlabel">試算の状況</span>
+      <div class="seg phase" id="seg-phase">
+        <button type="button" data-phase="pre" onclick="setPhase('pre')">罹患前モード<small>将来の備えとして試算</small></button>
+        <button type="button" data-phase="post" onclick="setPhase('post')">罹患後モード<small>診断後の実状況で試算</small></button>
+      </div>
+    </div>
+  </div>
+  <div class="mode-desc" id="mode-desc"></div>
+</div>
+
 <div class="card">
-  <h2>STEP 1｜基本情報</h2>
+  <h2>STEP 1｜基本情報 <span id="step1-phase" class="phase-tag pre">罹患前</span></h2>
   <div class="grid">
-    <div><label>年齢</label><div class="row"><input type="number" id="age" value="45" min="20" max="79"><span class="unit">歳</span></div></div>
+    <div><label>年齢</label><div class="row"><input type="number" id="age" value="45" min="20" max="99"><span class="unit">歳</span></div>
+      <div class="note">70歳以上は年齢に応じた自己負担割合（2割／後期高齢者1〜3割）で計算します</div></div>
     <div><label>性別</label><select id="sex" onchange="filterCancer()"><option value="m">男性</option><option value="f">女性</option></select></div>
     <div><label>職業区分</label>
-      <select id="job">
+      <select id="job" onchange="onJobChange()">
         <option value="kaisha">会社員（協会けんぽ／健保組合）</option>
         <option value="koumuin">公務員（共済）</option>
+        <option value="yakuin">会社役員（健保）</option>
         <option value="jiei">自営業・フリーランス（国保）</option>
+        <option value="kojin">個人事業主（国保）</option>
         <option value="part">パート・アルバイト（被用者保険加入）</option>
         <option value="fuyou">専業主婦・主夫／扶養内（被扶養者）</option>
-      </select></div>
-    <div><label>本人の年収（額面）</label><div class="row"><input type="number" id="income" value="500" min="0"><span class="unit">万円</span></div></div>
-    <div><label>配偶者</label><select id="spouse"><option value="1">あり</option><option value="0">なし</option></select></div>
-    <div><label>配偶者の年収（額面）</label><div class="row"><input type="number" id="spIncome" value="200" min="0"><span class="unit">万円</span></div></div>
-    <div><label>子どもの人数</label><select id="kids"><option>0</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select></div>
+        <option value="nenkin">年金生活者</option>
+        <option value="mushoku">無職</option>
+        <option value="other">その他</option>
+      </select>
+      <div class="note" id="jobNote"></div></div>
+    <div><label>世帯主</label>
+      <select id="setainushi">
+        <option value="self">本人が世帯主</option>
+        <option value="spouse">配偶者が世帯主</option>
+        <option value="parent">親が世帯主</option>
+        <option value="child">子が世帯主</option>
+        <option value="other">その他</option>
+      </select>
+      <div class="note">加入する公的医療保険・所得区分の判定に使用します</div></div>
+    <div><label id="incomeLabel">本人の年収（額面）</label><div class="row"><input type="number" id="income" value="500" min="0"><span class="unit">万円</span></div>
+      <div class="note pre-only" style="display:none">※罹患前モードでは現在の年収を入力</div></div>
+    <div><label>その他の収入（年額）</label><div class="row"><input type="number" id="otherIncome" value="0" min="0"><span class="unit">万円/年</span></div>
+      <div class="note">年金・不動産・配当・雑所得・副業・家族からの援助など、給与・事業収入以外の継続収入</div></div>
+    <div class="detail-only"><label>その他の収入の主な種類</label>
+      <select id="otherType">
+        <option value="none">―（その他収入なし）</option>
+        <option value="nenkin">公的年金収入</option>
+        <option value="fudosan">不動産収入</option>
+        <option value="haito">配当収入</option>
+        <option value="zatsu">雑所得</option>
+        <option value="fukugyo">副業収入</option>
+        <option value="enjo">家族からの援助</option>
+        <option value="other">その他継続的な収入</option>
+      </select>
+      <div class="note">「家族からの援助」は所得区分の判定には含めず、家計収支にのみ反映します</div></div>
+    <div><label>配偶者</label><select id="spouse" onchange="onSpouseChange()"><option value="1">あり</option><option value="0">なし</option></select></div>
+    <div class="detail-only" id="spIncomeWrap"><label>配偶者の年収（額面）</label><div class="row"><input type="number" id="spIncome" value="200" min="0"><span class="unit">万円</span></div></div>
+    <div><label>子ども（扶養家族）の人数</label><select id="kids"><option>0</option><option selected>1</option><option>2</option><option>3</option><option>4</option></select>
+      <div class="note">世帯構成・扶養家族の把握に使用します</div></div>
   </div>
 </div>
 
@@ -161,15 +241,15 @@
   <h2>STEP 2｜居住地と治療地</h2>
   <div class="grid">
     <div><label>居住地（都道府県）</label><select id="pref" onchange="fillCities()"></select></div>
-    <div><label>市区町村（任意）</label>
+    <div class="detail-only"><label>市区町村（任意）</label>
       <select id="city" onchange="fillHospitals()"><option value="">未選択（都道府県全体で計算）</option></select>
       <div class="note">選択すると近隣の拠点病院候補と差額ベッド代の目安に反映されます（未選択でも計算できます）</div></div>
-    <div><label>治療地</label>
+    <div class="detail-only"><label>治療地</label>
       <select id="treatLoc" onchange="fillHospitals()">
         <option value="near">居住地周辺の病院（通院しやすい）</option>
         <option value="far">遠隔の専門施設（がん専門病院・先進医療施設等）</option>
       </select></div>
-    <div><label>病院候補の検索範囲</label>
+    <div class="detail-only"><label>病院候補の検索範囲</label>
       <select id="hospRange" onchange="fillHospitals()">
         <option value="5">市区町村から5km以内</option>
         <option value="10" selected>市区町村から10km以内</option>
@@ -180,28 +260,42 @@
         <option value="pref">都道府県内すべて</option>
       </select>
       <div class="note">市区町村を選択した場合の絞り込み範囲です。地方部では範囲を広げてください</div></div>
-    <div><label id="hospLabel">がん診療連携拠点病院等（候補・任意）</label>
+    <div class="detail-only"><label id="hospLabel">がん診療連携拠点病院等（候補・任意）</label>
       <select id="hospital" onchange="bedAuto()">
         <option value="none">未選択（エリア平均単価で計算）</option>
       </select>
       <div class="note" id="hospNote"></div></div>
   </div>
-  <div class="footnote" style="margin-top:6px;">※候補は厚生労働省「がん診療連携拠点病院等一覧表」（令和8年4月1日現在・全468施設）に基づきます。「居住地周辺」では、市区町村選択時は指定範囲内の施設（県境を越えた施設を含む）を近い順、未選択時は同一都道府県内の施設を区分順に表示します。「遠隔」では全国の施設を現住所から近い順に表示します。距離は市区町村役場間の直線距離による概算です。居住地と同一県内の遠隔施設を選んだ場合、交通費・宿泊費は「県内通院」の単価で計算します。</div>
+  <div class="footnote detail-only" style="margin-top:6px;">※候補は厚生労働省「がん診療連携拠点病院等一覧表」（令和8年4月1日現在・全468施設）に基づきます。「居住地周辺」では、市区町村選択時は指定範囲内の施設（県境を越えた施設を含む）を近い順、未選択時は同一都道府県内の施設を区分順に表示します。「遠隔」では全国の施設を現住所から近い順に表示します。距離は市区町村役場間の直線距離による概算です。居住地と同一県内の遠隔施設を選んだ場合、交通費・宿泊費は「県内通院」の単価で計算します。</div>
 </div>
 
 <div class="card">
-  <h2>STEP 3｜シミュレーションするがんの仮定</h2>
-  <div class="note" style="margin:-6px 0 10px;">※実際の病歴ではなく「仮定」として選択します（個人情報保護のため病歴は入力・保存しません）</div>
+  <h2 id="step3-head">STEP 3｜シミュレーションするがんの仮定 <span id="step3-phase" class="phase-tag pre">罹患前</span></h2>
+  <div class="note pre-only" style="margin:-6px 0 10px;">※実際の病歴ではなく「仮定」として選択します（個人情報保護のため病歴は入力・保存しません）</div>
+  <div class="note post-only" style="margin:-6px 0 10px; display:none;">※診断されたがん種・ステージ・治療状況を選択してください（個人情報保護のため病歴は保存しません）</div>
   <div class="grid">
-    <div><label>がん種（仮定）</label><select id="cancer" onchange="fillSubtype()"></select></div>
-    <div><label>ステージ（仮定）</label>
+    <div><label id="cancerLabel">がん種（仮定）</label><select id="cancer" onchange="fillSubtype()"></select></div>
+    <div class="simple-only"><label>進行度（ざっくり）</label>
+      <select id="stageSimple">
+        <option value="2">早期（ステージ I・II 相当）</option>
+        <option value="3">進行（ステージ III 相当）</option>
+        <option value="4">進行・転移あり（ステージ IV 相当）</option>
+      </select>
+      <div class="note">概算用のおおまかな区分です。詳しいステージが分かる場合は「詳細版」をご利用ください</div></div>
+    <div class="detail-only"><label id="stageLabel">ステージ（仮定）</label>
       <select id="stage">
         <option value="1">ステージ I</option><option value="2" selected>ステージ II</option>
         <option value="3">ステージ III</option><option value="4">ステージ IV</option>
       </select></div>
-    <div id="subtypeWrap" style="display:none;"><label>サブタイプ（仮定）</label><select id="subtype"></select>
+    <div class="detail-only"><label>サブタイプの取り扱い</label>
+      <select id="subMode" onchange="onSubModeChange()">
+        <option value="approx">サブタイプを選択せず概算で試算する</option>
+        <option value="select">サブタイプを選択する</option>
+      </select>
+      <div class="note">把握していない場合は「概算で試算」を選べます</div></div>
+    <div class="detail-only" id="subtypeWrap" style="display:none;"><label id="subtypeLabel">サブタイプ（仮定）</label><select id="subtype"></select>
       <div class="note">サブタイプにより治療法と薬剤費が変わります</div></div>
-    <div><label>遺伝子パネル検査（がんゲノム医療）</label>
+    <div class="detail-only"><label>遺伝子パネル検査（がんゲノム医療）</label>
       <select id="panel">
         <option value="none">利用しない</option>
         <option value="later">標準治療後に保険適用で利用（検査費 約56万円・3割負担）</option>
@@ -210,8 +304,8 @@
   </div>
 </div>
 
-<div class="card">
-  <h2>STEP 4｜現在の保険加入状況（ざっくりでOK）</h2>
+<div class="card detail-card">
+  <h2>STEP 4｜現在の保険加入状況（ざっくりでOK） <span id="step4-phase" class="phase-tag pre">罹患前</span></h2>
   <div class="grid">
     <div><label>がん診断一時金</label><div class="row"><input type="number" id="lumpsum" value="100" min="0"><span class="unit">万円</span></div></div>
     <div><label>診断一時金の支払タイプ</label>
@@ -260,14 +354,27 @@
         <div class="note">空欄の場合は世帯手取りの約75%で自動推計します</div></div>
       <div><label>健保組合の付加給付</label><div class="row"><input type="number" id="fuka" placeholder="例：25000"><span class="unit">円</span></div>
         <div class="note">1ヶ月の自己負担上限額。制度がない場合・不明な場合は空欄</div></div>
-      <div><label>就労シナリオ</label>
+      <div><label id="workModeLabel">本人の就労シナリオ</label>
         <select id="workMode">
           <option value="auto">自動（治療シナリオに応じて設定）</option>
           <option value="return">休職 → フルタイム復職</option>
           <option value="short">休職 → 時短復職（収入30%減・2年間）</option>
           <option value="half">休職 → 大幅な就労制限（収入50%減・2年間）</option>
           <option value="quit">離職</option>
-        </select></div>
+        </select>
+        <div class="note post-only" style="display:none;">罹患後モードでは、現在の就労状況（休職・退職・時短など）を選択してください</div></div>
+      <div><label>配偶者の就労調整</label>
+        <select id="spouseWork">
+          <option value="keep">現在の働き方を継続する</option>
+          <option value="short">時短勤務にする（収入30%減）</option>
+          <option value="leave">一時的に休職する（初年度）</option>
+          <option value="quit">退職する</option>
+          <option value="fuyou">扶養内に収入を調整する</option>
+          <option value="none">就労していない</option>
+          <option value="undecided">未定</option>
+          <option value="other">その他</option>
+        </select>
+        <div class="note">看護・付添い等に伴う配偶者の働き方の変化を収入減少額の計算に反映します</div></div>
       <div><label>高額療養費の制度基準</label>
         <select id="kogakuVer">
           <option value="r2026">2026年8月改定後（政府公表値・年間上限対応）</option>
@@ -291,7 +398,6 @@
       <div class="checkline"><input type="checkbox" id="optProton" onchange="hadronPreview()"><label for="optProton" style="margin:0;">先進医療：<b>陽子線治療</b>を利用するシナリオ（技術料約268万円・全額自費）</label></div>
       <div class="footnote" id="hadronNote" style="display:none; margin-top:2px;"></div>
       <div class="checkline"><input type="checkbox" id="optWig" checked><label for="optWig" style="margin:0;">ウィッグ等のアピアランスケア費用を含める（薬物療法がある場合・約15万円）</label></div>
-      <div class="checkline"><input type="checkbox" id="optCare"><label for="optCare" style="margin:0;">配偶者の就労調整（看護・付添いで初年度の配偶者収入10%減）</label></div>
     </div>
   </details>
 </div>
@@ -301,6 +407,7 @@
 
 <!-- ============ 結果表示 ============ -->
 <div id="results">
+  <div id="result-notices"></div>
   <div class="card">
     <h2>診断サマリー（診断から10年間の概算・推計値・3シナリオのレンジ）</h2>
     <div class="kpi-grid">
@@ -521,6 +628,20 @@ const KOGAKU = {
   exempt: {now:{label:'区分オ（住民税非課税）',base:35400,multi:24600}, r2026:{label:'区分オ（住民税非課税）',base:36900,multi:24600,ycap:290000}}
 };
 
+/* ===== 70歳以上の高額療養費（簡易・仮データ／要確認） =====
+   70歳以上は外来（個人）上限と世帯上限が分かれ、一般区分は世帯57,600円・外来18,000円。
+   現役並み（Ⅰ〜Ⅲ）は70歳未満の区分ウ〜アと同じ算定式を使用。低所得Ⅰ/Ⅱは非課税世帯で適用。
+   ※ycap（年間上限）は本シミュレーションでは70歳未満と同様に診断月起算で近似。一般の外来年間上限144,000円はoutYで近似。*/
+const KOGAKU70 = {
+  // 現役並み（課税所得・年収の概算しきい値で判定）
+  genekiIII:{label:'現役並みⅢ（70歳以上・年収約1,160万円〜）',base:252600,thresh:842000,multi:140100,out:null},
+  genekiII :{label:'現役並みⅡ（70歳以上・約770〜1,160万円）', base:167400,thresh:558000,multi:93000, out:null},
+  genekiI  :{label:'現役並みⅠ（70歳以上・約370〜770万円）',  base:80100, thresh:267000,multi:44400, out:null},
+  ippan    :{label:'一般（70歳以上・〜約370万円）',          base:57600, thresh:null,  multi:44400, out:18000, outY:144000},
+  teiII    :{label:'低所得Ⅱ（70歳以上・住民税非課税）',       base:24600, thresh:null,  multi:24600, out:8000},
+  teiI     :{label:'低所得Ⅰ（70歳以上・非課税かつ所得一定以下）',base:15000,thresh:null,  multi:15000, out:8000},
+};
+
 // --- 地域・交通費 簡易単価マスタ（円） ---
 const TRANSPORT = {
   near:   {visit:1500, admission:3000, stayInit:0,     label:'居住地周辺'},
@@ -551,6 +672,76 @@ const LUMP_INT   = {once:null, m6:6, y1:12, y2:24, y3:36};
 const LUMP_LABEL = {once:'一生に1回', m6:'半年に1回', y1:'1年に1回', y2:'2年に1回', y3:'3年に1回'};
 
 function deductRate(gross){ if(gross<=4000000) return 0.15; if(gross<=7000000) return 0.20; if(gross<=11000000) return 0.30; return 0.33; }
+
+/* ===== 所得区分判定に用いる収入（その他収入のうち「家族からの援助」は除外） ===== */
+function incomeForBracket(inp){
+  const incl = inp.otherType!=='enjo';   // 家族からの援助は所得区分に含めない（要件5-7）
+  return inp.gross + (incl? inp.otherIncome : 0);
+}
+/* ===== 公的医療保険の種別ラベル（職業・年齢で判定） ===== */
+function insuranceLabel(inp){
+  if(inp.age>=75) return '後期高齢者医療制度';
+  if(inp.job==='koumuin') return '共済組合';
+  if(['kaisha','yakuin'].includes(inp.job)) return '健康保険（協会けんぽ／健保組合）';
+  if(inp.job==='part') return '被用者保険（パート・アルバイト）';
+  if(inp.job==='fuyou') return (inp.setainushi==='self'? '国民健康保険':'被扶養者（家族の被用者保険）');
+  return '国民健康保険';   // jiei / kojin / nenkin / mushoku / other
+}
+/* ===== 年齢・所得に応じた医療費の自己負担割合（仮ロジック／要確認） ===== */
+function selfShareRate(inp){
+  const income=incomeForBracket(inp);
+  if(inp.age>=75){            // 後期高齢者医療制度
+    if(income>=5200000) return 0.3;   // 現役並み所得
+    if(income>=2000000) return 0.2;   // 一定以上所得（単身年収200万円以上等の簡易判定）
+    return 0.1;
+  }
+  if(inp.age>=70){            // 70〜74歳
+    return income>=5200000? 0.3 : 0.2;
+  }
+  return 0.3;                 // 〜69歳
+}
+/* ===== 高額療養費の自己負担上限区分（70歳未満／以上を切替） ===== */
+function kogakuBracket(inp){
+  const ver=inp.kogakuVer, income=incomeForBracket(inp);
+  if(inp.age>=70){
+    let b;
+    if(inp.taxExempt){ b = income<800000? KOGAKU70.teiI : KOGAKU70.teiII; }
+    else if(income>=11600000) b=KOGAKU70.genekiIII;
+    else if(income>=7700000)  b=KOGAKU70.genekiII;
+    else if(income>=3700000)  b=KOGAKU70.genekiI;
+    else b=KOGAKU70.ippan;
+    // 年間上限（2026年8月新設）は70歳未満と同水準で近似付与（現役並みは未設定）
+    const yc = ver==='r2026' ? ({genekiIII:1680000,genekiII:1110000,genekiI:530000,ippan:530000,teiII:290000,teiI:290000})[Object.keys(KOGAKU70).find(k=>KOGAKU70[k]===b)] : null;
+    return {label:b.label,base:b.base,thresh:b.thresh,multi:b.multi,ycap:yc,out:b.out||null,outY:b.outY||null};
+  }
+  // 70歳未満
+  if(inp.taxExempt){ const e=KOGAKU.exempt[ver]; return {label:e.label,base:e.base,thresh:null,multi:e.multi,ycap:e.ycap||null,out:null}; }
+  const table=KOGAKU[ver];
+  const b=table.find(x=>income>=x.min);
+  return {label:b.label,base:b.base,thresh:b.thresh,multi:b.multi,ycap:b.ycap||null,out:null};
+}
+/* ===== 配偶者の就労状況：平常時（罹患しない場合）の収入係数 ===== */
+//  構造的に働いていない／扶養内調整は罹患の有無にかかわらず適用（＝収入減少には数えない）
+function spBaseFactor(inp){
+  if(inp.spouseWork==='none') return 0.0;   // もともと就労していない
+  if(inp.spouseWork==='fuyou') return 0.6;  // もともと扶養内に調整
+  return 1.0;
+}
+/* ===== 配偶者の就労調整：本シナリオ（罹患後）の月別収入係数 ===== */
+//  時短・休職・退職は「看護・付添い等に伴う調整」として収入減少に反映（要件5-6）
+function spScenFactor(inp, m){
+  switch(inp.spouseWork){
+    case 'short':  return 0.7;                  // 時短勤務（収入30%減）
+    case 'leave':  return m<12? 0.0 : 1.0;      // 一時的に休職（初年度）
+    case 'quit':   return 0.0;                  // 退職
+    case 'fuyou':  return 0.6;                  // 扶養内に調整（平常時と同じ＝減少なし）
+    case 'none':   return 0.0;                  // 就労していない（平常時と同じ＝減少なし）
+    case 'keep':   return 1.0;                  // 継続（減少なし）
+    case 'undecided':
+    case 'other':
+    default:       return (m<12? 0.95 : 1.0);   // 未定・その他：初年度のみ看護等で軽微な調整
+  }
+}
 
 // 都道府県（JIS都道府県コード順：01北海道〜47沖縄県）
 const PREFS = ["北海道","青森県","岩手県","宮城県","秋田県","山形県","福島県","茨城県","栃木県","群馬県","埼玉県","千葉県","東京都","神奈川県","新潟県","富山県","石川県","福井県","山梨県","長野県","岐阜県","静岡県","愛知県","三重県","滋賀県","京都府","大阪府","兵庫県","奈良県","和歌山県","鳥取県","島根県","岡山県","広島県","山口県","徳島県","香川県","愛媛県","高知県","福岡県","佐賀県","長崎県","熊本県","大分県","宮崎県","鹿児島県","沖縄県"];
@@ -1145,12 +1336,74 @@ function hadronPlan(inp){
   return {items,cost,travel};
 }
 
+/* ============ モード・状況の状態管理 ============ */
+let MODE='simple';   // 'simple' | 'detail'
+let PHASE='pre';     // 'pre'（罹患前） | 'post'（罹患後）
+
+function applyModeClasses(){
+  document.body.classList.toggle('simple-mode', MODE==='simple');
+  document.body.classList.toggle('detail-mode', MODE==='detail');
+  document.body.classList.toggle('mode-pre', PHASE==='pre');
+  document.body.classList.toggle('mode-post', PHASE==='post');
+  // セグメントのactive表示
+  document.querySelectorAll('#seg-mode button').forEach(b=>b.classList.toggle('active', b.dataset.mode===MODE));
+  document.querySelectorAll('#seg-phase button').forEach(b=>b.classList.toggle('active', b.dataset.phase===PHASE));
+  // フェーズタグ
+  const tagTxt = PHASE==='pre'? '罹患前':'罹患後';
+  document.querySelectorAll('.phase-tag').forEach(t=>{ t.textContent=tagTxt; t.className='phase-tag '+(PHASE==='pre'?'pre':'post'); });
+  // ラベルの出し分け（罹患前＝仮定／罹患後＝診断後の実情報）
+  const pre = PHASE==='pre';
+  document.getElementById('cancerLabel').textContent = pre? 'がん種（仮定）':'診断されたがん種';
+  document.getElementById('stageLabel').textContent  = pre? 'ステージ（仮定）':'ステージ／治療状況';
+  document.getElementById('subtypeLabel').textContent= pre? 'サブタイプ（仮定）':'サブタイプ';
+  document.getElementById('incomeLabel').textContent = pre? '本人の年収（額面）':'現在の年収（額面）';
+  document.getElementById('step3-head').firstChild.textContent = pre? 'STEP 3｜シミュレーションするがんの仮定 ':'STEP 3｜診断されたがんの情報 ';
+  document.getElementById('workModeLabel').textContent = pre? '本人の就労シナリオ（想定）':'本人の就労状況（現在・今後の見込み）';
+  // モード説明
+  const md=document.getElementById('mode-desc');
+  const mTxt = MODE==='simple'
+    ? '<b>簡易版</b>：年齢・性別・居住地・職業・年収・世帯構成・がん種など最低限の入力で、経済的影響の概算を表示します（保険加入状況は考慮しません）。'
+    : '<b>詳細版</b>：治療地・病院・保険加入状況・就労シナリオなどを入力し、より精緻に試算します。';
+  const pTxt = PHASE==='pre'
+    ? '　／　<b>罹患前モード</b>：将来の備えとして、必要保障額・収入減少リスク・保障の不足額を確認します。'
+    : '　／　<b>罹患後モード</b>：診断後の実状況に基づき、今後の自己負担・収入減少・利用可能な公的制度を確認します。';
+  md.innerHTML = mTxt + pTxt;
+}
+function setMode(m){ MODE=m; applyModeClasses(); }
+function setPhase(p){ PHASE=p; applyModeClasses(); }
+function onJobChange(){
+  const job=document.getElementById('job').value;
+  const note=document.getElementById('jobNote');
+  const txt={
+    nenkin:'年金収入はSTEP1「本人の年収」に、その他所得は「その他の収入」に入力してください。年齢に応じて後期高齢者医療制度（75歳〜）等で判定します。',
+    fuyou:'被扶養者として扱います（傷病手当金の対象外）。',
+    jiei:'国民健康保険・傷病手当金の対象外として計算します。',
+    kojin:'国民健康保険・傷病手当金の対象外として計算します。',
+    yakuin:'健保には加入しますが、傷病手当金は役員報酬のため対象外として計算します。',
+    mushoku:'国民健康保険（または被扶養者）・傷病手当金の対象外として計算します。',
+    other:'国民健康保険を基準に計算します。'
+  }[job]||'';
+  note.textContent=txt;
+}
+function onSpouseChange(){
+  const has=document.getElementById('spouse').value==='1';
+  document.getElementById('spIncomeWrap').style.display = has? '':'none';
+}
+function onSubModeChange(){
+  const sel=document.getElementById('subMode').value;
+  const c=TREATMENT[document.getElementById('cancer').value];
+  const wrap=document.getElementById('subtypeWrap');
+  wrap.style.display = (sel==='select' && c && c.subtypes)? '':'none';
+}
+
 /* ============ 初期化 ============ */
 (function init(){
   const p=document.getElementById('pref');
   PREFS.forEach(n=>{const o=document.createElement('option');o.textContent=n;p.appendChild(o);});
-  p.value='福岡県';
+  p.value='東京都';   // 居住地のデフォルトを東京都に変更（要件3-7）
   filterCancer(); fillCities();
+  onJobChange(); onSpouseChange();
+  applyModeClasses();
 })();
 // 市区町村プルダウン：都道府県に連動して再生成（未選択も可）
 function fillCities(){
@@ -1252,12 +1505,16 @@ function filterCancer(){
 }
 function fillSubtype(){
   const c=TREATMENT[document.getElementById('cancer').value];
-  const wrap=document.getElementById('subtypeWrap'), sel=document.getElementById('subtype');
+  const subModeSel=document.getElementById('subMode');
+  const sel=document.getElementById('subtype');
   sel.innerHTML='';
   if(c && c.subtypes){
     Object.entries(c.subtypes).forEach(([k,s])=>{const o=document.createElement('option');o.value=k;o.textContent=s.label;sel.appendChild(o);});
-    wrap.style.display='';
-  } else wrap.style.display='none';
+    subModeSel.parentElement.style.display='';   // サブタイプ取り扱いの選択を表示
+  } else {
+    subModeSel.parentElement.style.display='none';
+  }
+  onSubModeChange();
 }
 
 /* ============ 入力収集 ============ */
@@ -1265,13 +1522,20 @@ function getInput(){
   const v=id=>document.getElementById(id).value;
   const man=x=>Math.round((parseFloat(x)||0)*10000);
   const c=TREATMENT[v('cancer')];
-  return {
-    age:+v('age'), sex:v('sex'), job:v('job'),
+  const simple = (MODE==='simple');
+  // サブタイプ：選択モードかつ対象がん種のときのみ採用。それ以外は概算（null）
+  const useSub = (!simple) && v('subMode')==='select' && c && c.subtypes;
+  const inp = {
+    mode:MODE, phase:PHASE, simple,
+    age:+v('age'), sex:v('sex'), job:v('job'), setainushi:v('setainushi'),
     gross:man(v('income')), hasSpouse:v('spouse')==='1', spGross:v('spouse')==='1'?man(v('spIncome')):0,
+    otherIncome:man(v('otherIncome')), otherType:v('otherType'),
+    spouseWork:v('spouseWork'),
     kids:+v('kids'), pref:v('pref'), city:v('city'), homeGeo:homeGeo(), treatLoc:v('treatLoc'),
     hospital:v('hospital')!=='none'? (HOSPITALS[+v('hospital')]||null) : null,
     cancer:v('cancer'), stage:+v('stage'),
-    subtype:(c&&c.subtypes)? v('subtype') : null,
+    subtype: useSub? v('subtype') : null,
+    subApprox: (c&&c.subtypes)? !useSub : false,   // サブタイプを概算（未指定）で試算しているか
     panel:v('panel'),
     lumpsum:man(v('lumpsum')), lumpType:v('lumpType'), treatM:man(v('treatM')), daily:+v('daily')||0, outDaily:+v('outDaily')||0,
     advRider:v('advRider')==='1', freeRider:v('freeRider'),
@@ -1285,8 +1549,20 @@ function getInput(){
     optProton:document.getElementById('optProton').checked,
     optWig:document.getElementById('optWig').checked,
     bedMode:v('bedMode'), bedManual:+v('bedManual')||0,
-    optCare:document.getElementById('optCare').checked,
+    spouseWorkRaw:v('spouseWork'),
   };
+  if(simple){
+    // 簡易版：進行度（早期/進行/転移）の簡易区分をステージに反映
+    inp.stage=+v('stageSimple')||2;
+    // 詳細項目は既定値で固定し、加入保険は考慮しない（純粋な経済的影響の概算）
+    inp.treatLoc='near'; inp.hospital=null; inp.subtype=null; inp.subApprox=(c&&c.subtypes)?true:false;
+    inp.panel='none'; inp.bedMode='none'; inp.bedManual=0;
+    inp.optHeavy=false; inp.optProton=false; inp.optWig=true;
+    inp.lumpsum=0; inp.lumpType='once'; inp.treatM=0; inp.daily=0; inp.outDaily=0;
+    inp.advRider=false; inp.freeRider='none'; inp.disIns=0; inp.lifeIns=0; inp.famIns=0;
+    inp.workMode='auto';
+  }
+  return inp;
 }
 
 /* ============ 有効治療パラメータ（サブタイプ反映） ============ */
@@ -1403,7 +1679,7 @@ function izokuMonthly(inp){
   if(!inp.hasSpouse && inp.kids===0) return 0;
   let a=0;
   if(inp.kids>0) a+=(816000+234800*Math.min(inp.kids,2)+78300*Math.max(0,inp.kids-2))/12; // 遺族基礎年金＋子の加算
-  if(['kaisha','koumuin','part'].includes(inp.job)) a+=inp.gross*0.10/12;                  // 遺族厚生年金（報酬比例の簡易概算）
+  if(['kaisha','koumuin','part','yakuin'].includes(inp.job)) a+=inp.gross*0.10/12;         // 遺族厚生年金（報酬比例の簡易概算）
   return a;
 }
 
@@ -1414,14 +1690,16 @@ function simulate(inp, scen){
   const M=120;
   const netM = inp.gross*NET_RATE/12;
   const spNetM = inp.spGross*NET_RATE/12;
+  const spBase = spBaseFactor(inp);   // 配偶者の平常時（罹患しない場合）の就労係数
   const tr = trInfo(inp);
   // 差額ベッド代の単価（円/日）：金額欄の値を使用（「エリア平均を取得」は金額欄に反映済・編集可）
   const bedFee = inp.bedMode==='none'? 0 : inp.bedManual;
 
-  const table = KOGAKU[inp.kogakuVer];
-  let bracket;
-  if(inp.taxExempt){ const e=KOGAKU.exempt[inp.kogakuVer]; bracket={label:e.label,base:e.base,thresh:null,multi:e.multi,ycap:e.ycap||null}; }
-  else { bracket = table.find(b=>inp.gross>=b.min); }
+  const bracket = kogakuBracket(inp);   // 年齢・職業・その他収入を反映した自己負担上限区分
+  const shareRate = selfShareRate(inp); // 年齢・所得に応じた自己負担割合（〜69歳3割／70〜74歳2割／75歳〜1〜3割）
+  // 給与・事業収入が罹患により変動しない区分（年金生活者・無職・専業主婦/扶養内）
+  const noEarnLoss = ['nenkin','mushoku','fuyou','other'].includes(inp.job);
+  const otherM = inp.otherIncome/12;    // その他収入（月額・家計収支に反映。罹患の有無で不変）
 
   // 保険期間（満了年齢）→ 診断からの月数に換算
   const disEndM = Math.max(0,(inp.disEnd-inp.age)*12);  // 就業不能保険の満了
@@ -1457,8 +1735,10 @@ function simulate(inp, scen){
       riderPaid+=cover; riderBen=cover; freeSelf=med-cover;
       hitLog[m]=false;
     } else if(med>0){
-      const self30=med*0.3;
+      const self30=med*shareRate;       // 年齢・所得に応じた自己負担割合
       let limit = bracket.thresh!=null ? bracket.base+Math.max(0,med-bracket.thresh)*0.01 : bracket.base;
+      // 70歳以上・一般/低所得の外来（個人）上限：入院がない月は外来上限を適用（仮）
+      if(bracket.out && t[m].days===0) limit=Math.min(limit, bracket.out);
       const recentHits=hitLog.slice(Math.max(0,m-12),m).filter(Boolean).length;
       if(recentHits>=3) limit=Math.min(limit,bracket.multi);
       hitLog[m]= self30>limit;
@@ -1483,7 +1763,10 @@ function simulate(inp, scen){
     // 収入と公的給付
     let salary=0, shoute=0, koyou=0, izokuP=0;
     if(alive){
-      if(m<wp.off){
+      if(noEarnLoss){
+        // 年金生活者・無職・専業主婦/扶養内：給与・事業収入は罹患により変動しない（年金等は継続）
+        salary=netM;
+      } else if(m<wp.off){
         if(wp.isEmployee && shouteUsed<18){ shoute=Math.min(inp.gross/12,STD_HOSHU_CAP)*2/3; shouteUsed++; }
       } else {
         if(wp.mode==='return') salary=netM;
@@ -1492,8 +1775,7 @@ function simulate(inp, scen){
         else { if(wp.hasKoyou && m<wp.off+6) koyou=netM*0.6; }
       }
     } else { izokuP=izoku; }
-    let spSalary=spNetM;
-    if(inp.optCare && m<12) spSalary*=0.9;
+    const spSalary = spNetM*spScenFactor(inp,m);   // 本シナリオの配偶者収入（就労調整を反映）
 
     // 民間保険の給付（insMed:がん保険・医療保険系／insDeath:死亡保険系／dis:就業不能保険）
     let insMed=riderBen, insDeath=0;
@@ -1519,11 +1801,12 @@ function simulate(inp, scen){
     }
 
     // 収入減少の生存中／死亡後の切り分け（種類別ギャップ診断用）
-    const baseM=netM+spNetM;
+    // baseM＝罹患しない場合の世帯手取り（配偶者は平常時の就労状況を反映／その他収入は不変のため相殺）
+    const baseM=netM+spNetM*spBase;
     const lossA= alive? Math.max(0,baseM-salary-spSalary) : 0;
     const lossD= alive? 0 : Math.max(0,baseM-salary-spSalary);
 
-    months.push({med,self,freeSelf,kogaku,trans,extra,salary,spSalary,shoute,koyou,izokuP,ins,insMed,insDeath,dis,lossA,lossD,days:t[m].days,alive});
+    months.push({med,self,freeSelf,kogaku,trans,extra,salary,spSalary,other:otherM,shoute,koyou,izokuP,ins,insMed,insDeath,dis,lossA,lossD,days:t[m].days,alive});
   }
 
   // 年次集計
@@ -1537,13 +1820,13 @@ function simulate(inp, scen){
     const sum=k=>mm.reduce((a,x)=>a+x[k],0);
     const aliveM=mm.filter(x=>x.alive).length;
     const self=sum('self'), freeSelf=sum('freeSelf'), trans=sum('trans'), extra=sum('extra');
-    const income=sum('salary')+sum('spSalary');
+    const income=sum('salary')+sum('spSalary')+sum('other');   // その他収入（年金・不動産等）を家計収入に反映
     const pubCash=sum('shoute')+sum('koyou')+sum('izokuP');
     const ins=sum('ins')+sum('dis');
     const kogaku=sum('kogaku');
     const refund=refundNext;
     refundNext = aliveM>0? Math.min(Math.max(self+trans-100000,0),2000000)*dRate : 0;
-    const baseIncome=(netM+spNetM)*12;
+    const baseIncome=(netM+spNetM*spBase)*12 + inp.otherIncome;  // 罹患しない場合（配偶者は平常時・その他収入を含む）
     const liv = livingY*(aliveM+(12-aliveM)*0.65)/12; // 死亡後は生活費65%と仮定
     sav += income+pubCash+ins+refund - liv - self - freeSelf - trans - extra;
     savBase += baseIncome - livingY;
@@ -1615,7 +1898,23 @@ function runSim(){
   document.getElementById('results').scrollIntoView({behavior:'smooth'});
 }
 
+function renderNotices(){
+  const box=document.getElementById('result-notices'); const parts=[];
+  if(INP.phase==='post'){
+    parts.push(`<div class="notice-banner post"><b>罹患後モード</b>：診断後の実状況に基づく試算です。今後の自己負担額・収入減少・利用可能な公的制度の確認にお使いください。表示している3つの経過はあくまで想定レンジです。</div>`);
+  } else {
+    parts.push(`<div class="notice-banner simple" style="background:#e7f3ec;border-color:#b6d8c3;color:#1f5e3c;"><b>罹患前モード</b>：将来の備えとしての試算です。必要保障額・収入減少リスク・保障の不足額の確認にお使いください。がん種・ステージは「仮定」です。</div>`);
+  }
+  if(INP.simple){
+    parts.push(`<div class="notice-banner simple"><b>簡易版による概算です。</b>最低限の入力のみを使用し、<b>現在加入中の保険（給付）は考慮していません</b>。治療地・病院・先進医療・詳細な就労シナリオ等も既定値で計算しています。より精緻な試算は画面上部で「詳細版」に切り替えてください。</div>`);
+  }
+  if(INP.subApprox){
+    parts.push(`<div class="notice-banner sub">この試算は<b>サブタイプを指定しない概算</b>です。実際の治療内容や病状により、費用・収入への影響は変動します。</div>`);
+  }
+  box.innerHTML=parts.join('');
+}
 function renderSummary(){
+  renderNotices();
   const ts=SCEN_KEYS.map(k=>RES[k].totals);
   const rng=key=>{ const v=ts.map(t=>t[key]); return fmt(Math.min(...v))+' 〜 '+fmt(Math.max(...v)); };
   document.getElementById('k-self').textContent=rng('burden');
@@ -1707,11 +2006,13 @@ function renderScenario(r){
   if(r.scen==='std') scenJ='標準的経過：初回治療の後、寛解して経過観察に移行するシナリオ';
   else if(r.scen==='severe') scenJ='重い経過：診断18ヶ月後に再発し、薬物療法が長期継続・就労が制限されるシナリオ';
   else scenJ=`厳しい経過：治療の効果が得られず、診断から約${Math.round(r.D/12*10)/10}年で亡くなられた場合を想定したシナリオ（ご遺族の家計を含む）`;
-  const subL = r.P.sub? '・'+r.P.sub.label : '';
+  const subL = r.P.sub? '・'+r.P.sub.label : (INP.subApprox? '・サブタイプ概算':'');
+  const noEarn = ['nenkin','mushoku','fuyou','other'].includes(INP.job);
+  const workJ = noEarn? '就労：給与・事業収入の変動なし（年金等は継続）' : `就労：休職${r.wp.off}ヶ月 → ${modeJ}`;
   document.getElementById('scn-desc').innerHTML=
     `<b>${r.P.c.label}${subL}・ステージ${'ⅠⅡⅢⅣ'[INP.stage-1]}</b>｜${scenJ}<br>`+
     `参考：このがん種・ステージの5年生存率 約${sv[0]}%／10年生存率 約${sv[1]}%（仮データ・要確認。生存率は過去の統計値であり、個々の経過を予測するものではありません）<br>`+
-    `就労：休職${r.wp.off}ヶ月 → ${modeJ}｜高額療養費：${r.bracket.label}｜治療地：${trInfo(INP).label}｜入院日数（10年計）：約${r.totals.days}日`;
+    `${workJ}｜公的医療保険：${insuranceLabel(INP)}（自己負担${Math.round(selfShareRate(INP)*10)}割）｜高額療養費：${r.bracket.label}｜治療地：${trInfo(INP).label}｜入院日数（10年計）：約${r.totals.days}日`;
 
   document.getElementById('scn-reg').innerHTML=
     `<b class="ttl">▍想定したモデル治療パターン（入力内容からの例示・医療監修前の仮データ）</b><ul>`+
@@ -1845,7 +2146,11 @@ function axis(W,H,L,B,T,R,max,min){
 /* ============ 帳票（印刷→PDF） ============ */
 function printReport(){
   const today=new Date(); const dstr=`${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
-  const jobJ={kaisha:'会社員',koumuin:'公務員',jiei:'自営業・フリーランス',part:'パート・アルバイト（被用者保険）',fuyou:'専業主婦・主夫（被扶養者）'}[INP.job];
+  const jobJ={kaisha:'会社員',koumuin:'公務員',yakuin:'会社役員',jiei:'自営業・フリーランス',kojin:'個人事業主',part:'パート・アルバイト（被用者保険）',fuyou:'専業主婦・主夫（被扶養者）',nenkin:'年金生活者',mushoku:'無職',other:'その他'}[INP.job]||'その他';
+  const setainushiJ={self:'本人',spouse:'配偶者',parent:'親',child:'子',other:'その他'}[INP.setainushi]||'本人';
+  const spWorkJ={keep:'現在の働き方を継続',short:'時短勤務（収入30%減）',leave:'一時的に休職（初年度）',quit:'退職',fuyou:'扶養内に収入を調整',none:'就労していない',undecided:'未定',other:'その他'}[INP.spouseWork]||'未定';
+  const otherTypeJ={none:'なし',nenkin:'公的年金収入',fudosan:'不動産収入',haito:'配当収入',zatsu:'雑所得',fukugyo:'副業収入',enjo:'家族からの援助',other:'その他継続収入'}[INP.otherType]||'なし';
+  const noEarn = ['nenkin','mushoku','fuyou','other'].includes(INP.job);
   const a=RES.std, b=RES.severe, d=RES.death;
   const sv=a.P.c.surv[INP.stage];
   const subL = a.P.sub? '・'+a.P.sub.label : '';
@@ -1871,13 +2176,15 @@ function printReport(){
   document.getElementById('report').innerHTML=`
   <h1>がん罹患シミュレーション レポート（概算・推計値）</h1>
   <div class="meta">作成日：${dstr}｜作成：株式会社Precision Financial ／ 日本対がんファイナンシャル・プランナーズ協会（JCFP）<br>
-  医療監修：（監修者確定後に記載）｜システム：がん罹患シミュレーション ライフプランニングシステム プロトタイプ v0.4.2</div>
+  医療監修：（監修者確定後に記載）｜システム：がん罹患シミュレーション ライフプランニングシステム プロトタイプ v0.5.0<br>
+  試算モード：${INP.simple?'簡易版（最低限の入力による概算・加入保険は未考慮）':'詳細版'}／${INP.phase==='pre'?'罹患前モード（将来の備えとしての試算）':'罹患後モード（診断後の実状況に基づく試算）'}${INP.subApprox?'／サブタイプ未指定の概算':''}</div>
 
   <h2>① 前提条件</h2>
   <table>
     <tr><th>項目</th><th>内容</th></tr>
     <tr><td class="l">年齢・性別・職業</td><td class="l">${INP.age}歳・${INP.sex==='m'?'男性':'女性'}・${jobJ}</td></tr>
-    <tr><td class="l">世帯</td><td class="l">本人年収${fmt(INP.gross)}${INP.hasSpouse?`／配偶者年収${fmt(INP.spGross)}`:'（配偶者なし）'}／子${INP.kids}人</td></tr>
+    <tr><td class="l">公的医療保険・自己負担割合</td><td class="l">${insuranceLabel(INP)}・自己負担${Math.round(selfShareRate(INP)*10)}割（年齢・所得区分による簡易判定）／世帯主：${setainushiJ}</td></tr>
+    <tr><td class="l">世帯・収入</td><td class="l">本人年収${fmt(INP.gross)}${INP.hasSpouse?`／配偶者年収${fmt(INP.spGross)}`:'（配偶者なし）'}／子${INP.kids}人${INP.otherIncome>0?`／その他の収入 年${fmt(INP.otherIncome)}（${otherTypeJ}）`:''}</td></tr>
     <tr><td class="l">貯蓄・生活費の前提</td><td class="l">現在の貯蓄・金融資産 ${fmt(INP.savings)}／年間生活費 ${fmt(a.livingY)}（${INP.living!=null?'入力値':'手取りの75%で自動設定'}・死亡シナリオの死亡後は65%と仮定）</td></tr>
     <tr><td class="l">居住地・治療地</td><td class="l">${INP.pref}${INP.city?' '+INP.city:''}／${trInfo(INP).label}${INP.hospital?'（'+INP.hospital.n+'）':''}</td></tr>
     ${RES.std.hadron.items.length?`<tr><td class="l">先進医療（粒子線治療）</td><td class="l">${RES.std.hadron.items.map(it=>`${it.type}：${it.fac.name}（${it.fac.pref}・約${it.distKm}km）技術料約${fmtY(it.cost)}万円＋移動費・滞在費約${fmtY(it.travel)}万円`).join('／')}</td></tr>`:''}
@@ -1886,7 +2193,7 @@ function printReport(){
     <tr><td class="l">遺伝子パネル検査</td><td class="l">${panelJ}</td></tr>
     <tr><td class="l">加入保険（入力値）</td><td class="l">診断一時金${fmt(INP.lumpsum)}（${LUMP_LABEL[INP.lumpType]}タイプ${INP.lumpType!=='once'?'・治療継続中は再支払':''}）／治療給付${INP.treatM>0?'月'+fmt(INP.treatM):'なし'}／入院日額${INP.daily.toLocaleString()}円／通院日額${INP.outDaily.toLocaleString()}円／先進医療特約${INP.advRider?'あり':'なし'}／自由診療特約：${riderJ}${INP.disIns>0?`／就業不能保険 月${fmt(INP.disIns)}（${{jotai:'従来型',yuru:'公的制度連動・緩やか',std2:'公的制度連動・標準'}[INP.disType]}・${INP.disEnd}歳満了）`:''}${INP.lifeIns>0?`／死亡保険（一時金）${fmt(INP.lifeIns)}`:''}${INP.famIns>0?`／収入保障保険 月${fmt(INP.famIns)}（${INP.famEnd}歳満了・最低保証2年）`:''}</td></tr>
     <tr><td class="l">高額療養費の基準</td><td class="l">${a.bracket.label}（${INP.kogakuVer==='r2026'?'2026年8月改定後・政府公表値・年間上限適用':'改定前の現行値'}）</td></tr>
-    <tr><td class="l">その他の設定</td><td class="l">住民税${INP.taxExempt?'非課税':'課税'}世帯／就労シナリオ：${({auto:'自動（治療シナリオに応じて設定）',return:'休職→フルタイム復職',short:'休職→時短復職（収入30%減・2年）',half:'休職→大幅な就労制限（収入50%減・2年）',quit:'離職'})[INP.workMode]}／ウィッグ等のアピアランスケア費用：${INP.optWig?'含む（約15万円）':'含めない'}／配偶者の就労調整：${INP.optCare?'あり（初年度の配偶者収入10%減）':'なし'}</td></tr>
+    <tr><td class="l">その他の設定</td><td class="l">住民税${INP.taxExempt?'非課税':'課税'}世帯／就労シナリオ：${({auto:'自動（治療シナリオに応じて設定）',return:'休職→フルタイム復職',short:'休職→時短復職（収入30%減・2年）',half:'休職→大幅な就労制限（収入50%減・2年）',quit:'離職'})[INP.workMode]}／ウィッグ等のアピアランスケア費用：${INP.optWig?'含む（約15万円）':'含めない'}／配偶者の就労調整：${spWorkJ}</td></tr>
   </table>
 
   <h2>② 想定したモデル治療パターン（例示・医療監修前の仮データ）</h2>
@@ -1935,7 +2242,7 @@ function printReport(){
   <h2>⑤ シナリオ別の経過・就労の前提</h2>
   <table>
     <tr><th style="width:18%;">シナリオ</th><th>想定した経過</th><th style="width:28%;">就労</th><th style="width:13%;">入院日数<br>（10年計）</th></tr>
-    ${SCEN_KEYS.map(k=>`<tr><td class="l">${SCEN_LABEL[k]}</td><td class="l">${scenJ(k)}</td><td class="l">休職${RES[k].wp.off}ヶ月 → ${modeJ(RES[k].wp.mode)}</td><td>約${RES[k].totals.days}日</td></tr>`).join('')}
+    ${SCEN_KEYS.map(k=>`<tr><td class="l">${SCEN_LABEL[k]}</td><td class="l">${scenJ(k)}</td><td class="l">${noEarn?'給与・事業収入の変動なし（年金等は継続）':'休職'+RES[k].wp.off+'ヶ月 → '+modeJ(RES[k].wp.mode)}</td><td>約${RES[k].totals.days}日</td></tr>`).join('')}
   </table>
 
   <h2>⑥ 貯蓄残高の推移とがん罹患による貯蓄の欠損額（シナリオ別）</h2>
